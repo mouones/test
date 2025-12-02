@@ -84,6 +84,20 @@
             border-color: #667eea;
             background: #f0f4ff;
         }
+        .framework-card.working {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .framework-card.working .framework-badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+        }
         .framework-icon {
             font-size: 3em;
             margin-bottom: 10px;
@@ -288,6 +302,16 @@
             </div>
 
             <div class="form-group">
+                <label>Memory (RAM in GB)</label>
+                <input type="number" id="memoryGB" value="5" min="5" max="32" />
+            </div>
+
+            <div class="form-group">
+                <label>CPU Cores</label>
+                <input type="number" id="cpuCores" value="2" min="1" max="8" />
+            </div>
+
+            <div class="form-group">
                 <label>Select Framework</label>
                 <div class="frameworks-grid" id="frameworksGrid">
                     <!-- Frameworks loaded dynamically -->
@@ -363,16 +387,19 @@
                 grid.innerHTML = '';
                 
                 for (const [key, fw] of Object.entries(frameworks)) {
-                    // Only show allowed frameworks
-                    if (!ALLOWED_FRAMEWORKS.includes(key)) continue;
-                    
                     const card = document.createElement('div');
-                    card.className = 'framework-card' + (key === selectedFramework ? ' selected' : '');
+                    const isWorking = ALLOWED_FRAMEWORKS.includes(key);
+                    const classes = ['framework-card'];
+                    if (key === selectedFramework) classes.push('selected');
+                    if (isWorking) classes.push('working');
+                    
+                    card.className = classes.join(' ');
                     card.dataset.framework = key;
                     card.innerHTML = `
                         <div class="framework-icon">${FRAMEWORK_ICONS[key] || '🚀'}</div>
                         <div class="framework-name">${fw.name}</div>
                         <div class="framework-port">Port: ${fw.port}</div>
+                        ${isWorking ? '<div class="framework-badge">✓ WORKING</div>' : ''}
                     `;
                     card.onclick = () => selectFramework(key);
                     grid.appendChild(card);
@@ -403,6 +430,8 @@
         async function deployApp() {
             const appName = document.getElementById('appName').value.trim();
             const repoUrl = document.getElementById('repoUrl').value.trim();
+            const memoryGB = parseInt(document.getElementById('memoryGB').value) || 5;
+            const cpuCores = parseInt(document.getElementById('cpuCores').value) || 2;
             const status = document.getElementById('status');
             const deployBtn = document.querySelector('.deploy-btn');
 
@@ -410,6 +439,13 @@
                 status.className = 'status error';
                 status.style.display = 'block';
                 status.innerHTML = '❌ Please fill in all fields';
+                return;
+            }
+
+            if (memoryGB < 5) {
+                status.className = 'status error';
+                status.style.display = 'block';
+                status.innerHTML = '❌ Minimum RAM is 5GB';
                 return;
             }
 
@@ -426,7 +462,9 @@
                         name: appName,
                         repo: repoUrl,
                         framework: selectedFramework,
-                        type: selectedType
+                        type: selectedType,
+                        memory: memoryGB * 1024,
+                        cores: cpuCores
                     })
                 });
 
@@ -471,13 +509,14 @@
                     const isRunning = container.status === 'running';
                     if (isRunning) runningCount++;
                     
+                    const port = container.port || 8000;
                     const row = tbody.insertRow();
                     row.innerHTML = `
                         <td>${container.ctid}</td>
                         <td>${container.hostname}</td>
-                        <td>LXC</td>
+                        <td>${container.framework || 'LXC'}</td>
                         <td>${container.ip}</td>
-                        <td><a href="http://${container.ip}:8000" target="_blank" style="color: #667eea; text-decoration: none;">🔗 Open</a></td>
+                        <td><a href="http://${container.ip}:${port}" target="_blank" style="color: #667eea; text-decoration: none;">🔗 Open</a></td>
                         <td><span style="color: ${isRunning ? '#10b981' : '#ef4444'}; font-weight: 600;">● ${container.status}</span></td>
                         <td><button class="delete-btn" onclick="deleteContainer(${container.ctid})">Delete</button></td>
                     `;

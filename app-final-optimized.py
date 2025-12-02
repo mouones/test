@@ -247,6 +247,8 @@ def deploy():
     framework = data.get('framework', 'python-flask')
     repo = data.get('repo') or FRAMEWORKS.get(framework, {}).get('test_repo', '')
     deploy_type = data.get('type', 'lxc')
+    memory = data.get('memory', 5120)  # Default 5GB in MB
+    cores = data.get('cores', 2)  # Default 2 cores
 
     if not repo:
         return jsonify({'error': 'Repository URL required'}), 400
@@ -264,20 +266,21 @@ def deploy():
     # Get IP without conflicts
     ip = get_static_ip(ctid)
 
-    print(f"Deploying {app_name} with CTID {ctid} and IP {ip}")
+    print(f"Deploying {app_name} with CTID {ctid}, IP {ip}, Memory {memory}MB, Cores {cores}")
 
     try:
         # Create container
         create_cmd = f"""pct create {ctid} {TEMPLATE} \
             --hostname {app_name} \
-            --memory 5120 \
-            --cores 2 \
+            --memory {memory} \
+            --cores {cores} \
             --net0 name=eth0,bridge=vmbr0,ip={ip}/{NETMASK},gw={GATEWAY} \
             --password {PASSWORD} \
             --features nesting=1 \
             --unprivileged 1 \
             --rootfs local-lvm:8 \
-            --onboot 1"""
+            --onboot 1 \
+            --description 'Framework: {framework}|Port: {fw_config["port"]}'"""
         
         output, code = run_cmd(create_cmd)
         if code != 0:
@@ -365,9 +368,12 @@ def list_containers():
                 status_output, _ = run_cmd(f"pct status {ctid}")
                 config_output, _ = run_cmd(f"pct config {ctid}")
                 
-                # Parse hostname
+                # Parse hostname, IP, and port from description
                 hostname = "unknown"
                 ip = "unknown"
+                port = 8000  # Default port
+                framework = "unknown"
+                
                 for line in config_output.split('\n'):
                     if line.startswith('hostname:'):
                         hostname = line.split(':', 1)[1].strip()
@@ -376,12 +382,26 @@ def list_containers():
                             ip = line.split('ip=')[1].split('/')[0].split(',')[0]
                         except:
                             pass
+                    elif line.startswith('description:'):
+                        desc = line.split(':', 1)[1].strip()
+                        if 'Port:' in desc:
+                            try:
+                                port = int(desc.split('Port:')[1].split('|')[0].strip())
+                            except:
+                                pass
+                        if 'Framework:' in desc:
+                            try:
+                                framework = desc.split('Framework:')[1].split('|')[0].strip()
+                            except:
+                                pass
                 
                 containers.append({
                     'ctid': int(ctid),
                     'hostname': hostname,
                     'status': status_output.replace('status: ', ''),
-                    'ip': ip
+                    'ip': ip,
+                    'port': port,
+                    'framework': framework
                 })
     
     return jsonify({'containers': containers})
