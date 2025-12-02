@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxmox PaaS Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .deploy-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .frameworks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .framework-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .framework-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .framework-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .framework-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .framework-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .framework-desc {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .type-option {
+            flex: 1;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .type-option:hover {
+            transform: translateY(-2px);
+        }
+
+        .type-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .deployment-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-family: monospace;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .containers-list {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .badge-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Proxmox PaaS Platform</h1>
+            <p class="subtitle">Deploy applications automatically from GitHub</p>
+        </header>
+
+        <div class="deploy-form">
+            <h2 style="margin-bottom: 20px; color: #333;">Deploy New Application</h2>
+            
+            <form id="deployForm">
+                <div class="form-group">
+                    <label>Application Name</label>
+                    <input type="text" id="appName" name="name" placeholder="my-app" required>
+                </div>
+
+                <div class="form-group">
+                    <label>GitHub Repository URL</label>
+                    <input type="url" id="repoUrl" name="repo" placeholder="https://github.com/username/repo" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Framework</label>
+                    <div class="frameworks" id="frameworks">
+                        {% for key, framework in frameworks.items() %}
+                        <div class="framework-card" data-framework="{{ key }}">
+                            <div class="framework-icon">{{ framework.icon }}</div>
+                            <div class="framework-name">{{ framework.name }}</div>
+                            <div class="framework-desc">{{ framework.description }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Container Type</label>
+                    <div class="type-selector">
+                        <div class="type-option selected" data-type="lxc">
+                            <h3>LXC Container</h3>
+                            <p style="color: #666; font-size: 0.9em;">Fast, lightweight (recommended)</p>
+                        </div>
+                        <div class="type-option" data-type="vm">
+                            <h3>Virtual Machine</h3>
+                            <p style="color: #666; font-size: 0.9em;">Full isolation</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="deployBtn">Deploy Application</button>
+            </form>
+        </div>
+
+        <div class="status" id="statusDiv">
+            <div id="statusContent"></div>
+        </div>
+
+        <div class="containers-list">
+            <h2 style="margin-bottom: 20px; color: #333;">Deployed Containers</h2>
+            <button class="btn" onclick="loadContainers()" style="width: auto; margin-bottom: 20px;">Refresh List</button>
+            <div id="containersList">
+                <p style="color: #666;">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFramework = 'python-flask';
+        let selectedType = 'lxc';
+
+        // Framework selection
+        document.querySelectorAll('.framework-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.framework-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedFramework = card.dataset.framework;
+            });
+        });
+
+        // Select first framework by default
+        document.querySelector('.framework-card').classList.add('selected');
+
+        // Type selection
+        document.querySelectorAll('.type-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedType = option.dataset.type;
+            });
+        });
+
+        // Form submission
+        document.getElementById('deployForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('statusDiv');
+            const statusContent = document.getElementById('statusContent');
+            const deployBtn = document.getElementById('deployBtn');
+            
+            deployBtn.disabled = true;
+            statusDiv.classList.add('active');
+            
+            statusContent.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>Deploying...</strong> Please wait while we create your application.
+                    <div class="spinner"></div>
+                </div>
+            `;
+            
+            const data = {
+                name: document.getElementById('appName').value,
+                repo: document.getElementById('repoUrl').value,
+                framework: selectedFramework,
+                type: selectedType
+            };
+            
+            try {
+                const response = await fetch('/deploy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const info = result.data;
+                    statusContent.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Success!</strong> Application deployed successfully.
+                        </div>
+                        <div class="deployment-info">
+                            <div class="info-row">
+                                <span class="info-label">Container ID:</span>
+                                <span class="info-value">${info.ctid}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Name:</span>
+                                <span class="info-value">${info.name}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">IP Address:</span>
+                                <span class="info-value">${info.ip}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">URL:</span>
+                                <span class="info-value"><a href="${info.url}" target="_blank">${info.url}</a></span>
+                            </div>
+                        </div>
+                    `;
+                    loadContainers();
+                } else {
+                    statusContent.innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>Error!</strong> ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusContent.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>Error!</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                deployBtn.disabled = false;
+            }
+        });
+
+        // Load containers
+        async function loadContainers() {
+            const containersList = document.getElementById('containersList');
+            containersList.innerHTML = '<p style="color: #666;">Loading...</p>';
+            
+            try {
+                const response = await fetch('/containers');
+                const data = await response.json();
+                
+                if (data.containers) {
+                    const lines = data.containers.trim().split('\n');
+                    if (lines.length > 1) {
+                        let html = '<table><thead><tr>';
+                        html += '<th>ID</th><th>Name</th><th>Status</th><th>Actions</th>';
+                        html += '</tr></thead><tbody>';
+                        
+                        for (let i = 1; i < lines.length; i++) {
+                            const parts = lines[i].trim().split(/\s+/);
+                            if (parts.length >= 2) {
+                                const id = parts[0];
+                                const status = parts[1];
+                                const name = parts.slice(2).join(' ');
+                                const badgeClass = status === 'running' ? 'badge-running' : 'badge-stopped';
+                                html += `<tr>
+                                    <td>${id}</td>
+                                    <td>${name}</td>
+                                    <td><span class="badge ${badgeClass}">${status}</span></td>
+                                    <td><button onclick="deleteContainer(${id})" class="btn" style="width: auto; padding: 5px 15px; font-size: 14px; background: #dc3545;">Delete</button></td>
+                                </tr>`;
+                            }
+                        }
+                        html += '</tbody></table>';
+                        containersList.innerHTML = html;
+                    } else {
+                        containersList.innerHTML = '<p style="color: #666;">No containers deployed yet.</p>';
+                    }
+                } else {
+                    containersList.innerHTML = '<p style="color: #666;">No containers found.</p>';
+                }
+            } catch (error) {
+                containersList.innerHTML = `<p style="color: #dc3545;">Error loading containers: ${error.message}</p>`;
+            }
+        }
+
+        async function deleteContainer(ctid) {
+            if (!confirm(`Are you sure you want to delete container ${ctid}?`)) return;
+            
+            try {
+                await fetch(`/delete/${ctid}`, { method: 'DELETE' });
+                loadContainers();
+            } catch (error) {
+                alert(`Error deleting container: ${error.message}`);
+            }
+        }
+
+        // Load containers on page load
+        loadContainers();
+    </script>
+</body>
+</html>

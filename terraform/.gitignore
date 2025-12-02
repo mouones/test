@@ -1,0 +1,37 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+!frameworks.auto.tfvars
+
+# Logs
+*.log
+terraform-plugin-proxmox.log
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+
+# Backup files
+*.backup
+*.bak
+*.swp
+*.swo
+*~

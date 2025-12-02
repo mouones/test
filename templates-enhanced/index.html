@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxmox PaaS Platform - Enhanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .frameworks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .framework-card {
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .framework-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .framework-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .framework-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        .framework-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .framework-port {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .deploy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .deploy-btn:hover {
+            transform: scale(1.05);
+        }
+        .deploy-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .terraform-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .terraform-btn:hover {
+            transform: scale(1.05);
+        }
+        .terraform-section {
+            background: #f0fdf4;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #10b981;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .status.deploying {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .containers-section {
+            margin-top: 40px;
+        }
+        .container-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .container-table th,
+        .container-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .container-table th {
+            background: #667eea;
+            color: white;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        .type-selector {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .type-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .type-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .stat-label {
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Proxmox PaaS Platform</h1>
+        <p class="subtitle">Deploy applications with 10+ frameworks in seconds</p>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalApps">0</div>
+                <div class="stat-label">Running Apps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalFrameworks">10</div>
+                <div class="stat-label">Frameworks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgDeployTime">60s</div>
+                <div class="stat-label">Avg Deploy Time</div>
+            </div>
+        </div>
+
+        <div class="terraform-section">
+            <h2>🏗️ Terraform Mass Deployment</h2>
+            <p style="color: #065f46; margin: 15px 0;">Deploy all 10 test frameworks simultaneously using Terraform infrastructure as code.</p>
+            <button class="terraform-btn" onclick="deployWithTerraform()">Deploy All 10 Frameworks with Terraform</button>
+            <div id="terraformStatus" class="status"></div>
+        </div>
+
+        <div class="form-section">
+            <h2>Deploy New Application</h2>
+            
+            <div class="form-group">
+                <label>Application Name</label>
+                <input type="text" id="appName" placeholder="my-awesome-app" />
+            </div>
+
+            <div class="form-group">
+                <label>GitHub Repository URL</label>
+                <input type="text" id="repoUrl" placeholder="https://github.com/username/repo" />
+            </div>
+
+            <div class="form-group">
+                <label>Select Framework</label>
+                <div class="frameworks-grid" id="frameworksGrid">
+                    <!-- Frameworks loaded dynamically -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Container Type</label>
+                <div class="type-selector">
+                    <div class="type-option selected" data-type="lxc">
+                        <div style="font-size: 2em;">📦</div>
+                        <strong>LXC Container</strong>
+                        <div style="font-size: 0.9em; color: #666;">Lightweight & Fast</div>
+                    </div>
+                    <div class="type-option" data-type="vm">
+                        <div style="font-size: 2em;">💻</div>
+                        <strong>Virtual Machine</strong>
+                        <div style="font-size: 0.9em; color: #666;">Full Isolation</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="deploy-btn" onclick="deployApp()">
+                Deploy Application
+            </button>
+
+            <div class="status" id="status"></div>
+        </div>
+
+        <div class="containers-section">
+            <h2>Running Containers</h2>
+            <table class="container-table" id="containersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Framework</th>
+                        <th>IP Address</th>
+                        <th>URL</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="containersBody">
+                    <!-- Containers loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let selectedFramework = 'python-flask';
+        let selectedType = 'lxc';
+        let frameworks = {};
+
+        const FRAMEWORK_ICONS = {
+            'python-flask': '🐍',
+            'python-django': '🎸',
+            'python-fastapi': '⚡',
+            'nodejs-express': '📗',
+            'nodejs-nextjs': '▲',
+            'php-laravel': '🔴',
+            'go-gin': '🐹',
+            'rust-actix': '🦀',
+            'ruby-rails': '💎',
+            'static-nginx': '🌐'
+        };
+
+        // Load frameworks
+        async function loadFrameworks() {
+            try {
+                const response = await fetch('/frameworks');
+                const data = await response.json();
+                frameworks = data.frameworks;
+                
+                const grid = document.getElementById('frameworksGrid');
+                grid.innerHTML = '';
+                
+                for (const [key, fw] of Object.entries(frameworks)) {
+                    const card = document.createElement('div');
+                    card.className = 'framework-card' + (key === selectedFramework ? ' selected' : '');
+                    card.dataset.framework = key;
+                    card.innerHTML = `
+                        <div class="framework-icon">${FRAMEWORK_ICONS[key] || '🚀'}</div>
+                        <div class="framework-name">${fw.name}</div>
+                        <div class="framework-port">Port: ${fw.port}</div>
+                    `;
+                    card.onclick = () => selectFramework(key);
+                    grid.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Error loading frameworks:', error);
+            }
+        }
+
+        function selectFramework(framework) {
+            selectedFramework = framework;
+            document.querySelectorAll('.framework-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.framework === framework);
+            });
+        }
+
+        // Type selector
+        document.querySelectorAll('.type-option').forEach(option => {
+            option.onclick = () => {
+                selectedType = option.dataset.type;
+                document.querySelectorAll('.type-option').forEach(o => {
+                    o.classList.remove('selected');
+                });
+                option.classList.add('selected');
+            };
+        });
+
+        async function deployApp() {
+            const appName = document.getElementById('appName').value.trim();
+            const repoUrl = document.getElementById('repoUrl').value.trim();
+            const status = document.getElementById('status');
+            const deployBtn = document.querySelector('.deploy-btn');
+
+            if (!appName || !repoUrl) {
+                status.className = 'status error';
+                status.style.display = 'block';
+                status.innerHTML = '❌ Please fill in all fields';
+                return;
+            }
+
+            deployBtn.disabled = true;
+            status.className = 'status deploying';
+            status.style.display = 'block';
+            status.innerHTML = '<div class="spinner"></div> Deploying application... This may take 60-90 seconds';
+
+            try {
+                const response = await fetch('/deploy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: appName,
+                        repo: repoUrl,
+                        framework: selectedFramework,
+                        type: selectedType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        ✅ <strong>Deployment Successful!</strong><br>
+                        Container ID: ${data.ctid}<br>
+                        IP Address: ${data.ip}<br>
+                        Framework: ${data.framework_name}<br>
+                        Access URL: <a href="${data.url}" target="_blank">${data.url}</a><br>
+                        SSH Command: <code>${data.ssh}</code><br>
+                        Password: <code>${data.password}</code>
+                    `;
+                    loadContainers();
+                } else {
+                    status.className = 'status error';
+                    status.innerHTML = `❌ Deployment failed: ${data.error}`;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                deployBtn.disabled = false;
+            }
+        }
+
+        async function loadContainers() {
+            try {
+                const response = await fetch('/list');
+                const data = await response.json();
+                const lines = data.containers.split('\n').slice(1);
+                
+                const tbody = document.getElementById('containersBody');
+                tbody.innerHTML = '';
+                
+                let count = 0;
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length >= 3) {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `
+                            <td>${parts[0]}</td>
+                            <td>${parts[2]}</td>
+                            <td>-</td>
+                            <td>192.168.171.${200 + (parts[0] - 300)}</td>
+                            <td><a href="http://192.168.171.${200 + (parts[0] - 300)}:8000" target="_blank">View App</a></td>
+                            <td><span style="color: ${parts[1] === 'running' ? 'green' : 'red'}">${parts[1]}</span></td>
+                            <td><button class="delete-btn" onclick="deleteContainer(${parts[0]})">Delete</button></td>
+                        `;
+                        count++;
+                    }
+                }
+                
+                document.getElementById('totalApps').textContent = count;
+            } catch (error) {
+                console.error('Error loading containers:', error);
+            }
+        }
+
+        async function deleteContainer(ctid) {
+            if (!confirm(`Are you sure you want to delete container ${ctid}?`)) return;
+
+            try {
+                const response = await fetch(`/delete/${ctid}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadContainers();
+                }
+            } catch (error) {
+                alert('Error deleting container: ' + error.message);
+            }
+        }
+
+        async function deployWithTerraform() {
+            const status = document.getElementById('terraformStatus');
+            const btn = event.target;
+            
+            if (!confirm('Deploy all 10 test frameworks? This will create containers 303-312.')) return;
+            
+            btn.disabled = true;
+            status.className = 'status deploying';
+            status.style.display = 'block';
+            status.innerHTML = '<div class="spinner"></div> Running Terraform deployment... This may take 3-5 minutes';
+
+            try {
+                const response = await fetch('/terraform/deploy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        ✅ <strong>Terraform Deployment Successful!</strong><br>
+                        Deployed: ${data.deployed || 10} containers<br>
+                        Time: ${data.duration || 'N/A'}<br>
+                        <pre style="background: #1f2937; color: #10b981; padding: 10px; border-radius: 5px; margin-top: 10px; overflow-x: auto;">${data.output || 'All frameworks deployed successfully'}</pre>
+                    `;
+                    loadContainers();
+                } else {
+                    status.className = 'status error';
+                    status.innerHTML = `❌ Terraform deployment failed: ${data.error}<br><pre style="background: #1f2937; color: #ef4444; padding: 10px; border-radius: 5px; margin-top: 10px; overflow-x: auto;">${data.details || ''}</pre>`;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Load data on page load
+        loadFrameworks();
+        loadContainers();
+        setInterval(loadContainers, 10000); // Refresh every 10 seconds
+    </script>
+</body>
+</html>
