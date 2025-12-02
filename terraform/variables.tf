@@ -32,7 +32,7 @@ variable "container_password" {
   description = "Root password for containers"
   type        = string
   sensitive   = true
-  default     = "rootpass123"
+  default     = "thenoob123."
 }
 
 variable "gateway" {
