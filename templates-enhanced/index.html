@@ -461,33 +461,35 @@
             try {
                 const response = await fetch('/list');
                 const data = await response.json();
-                const lines = data.containers.split('\n').slice(1);
+                const containers = data.containers || [];
                 
                 const tbody = document.getElementById('containersBody');
                 tbody.innerHTML = '';
                 
-                let count = 0;
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length >= 3) {
-                        const row = tbody.insertRow();
-                        row.innerHTML = `
-                            <td>${parts[0]}</td>
-                            <td>${parts[2]}</td>
-                            <td>-</td>
-                            <td>192.168.171.${200 + (parts[0] - 300)}</td>
-                            <td><a href="http://192.168.171.${200 + (parts[0] - 300)}:8000" target="_blank">View App</a></td>
-                            <td><span style="color: ${parts[1] === 'running' ? 'green' : 'red'}">${parts[1]}</span></td>
-                            <td><button class="delete-btn" onclick="deleteContainer(${parts[0]})">Delete</button></td>
-                        `;
-                        count++;
-                    }
+                let runningCount = 0;
+                for (const container of containers) {
+                    const isRunning = container.status === 'running';
+                    if (isRunning) runningCount++;
+                    
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${container.ctid}</td>
+                        <td>${container.hostname}</td>
+                        <td>LXC</td>
+                        <td>${container.ip}</td>
+                        <td><a href="http://${container.ip}:8000" target="_blank" style="color: #667eea; text-decoration: none;">🔗 Open</a></td>
+                        <td><span style="color: ${isRunning ? '#10b981' : '#ef4444'}; font-weight: 600;">● ${container.status}</span></td>
+                        <td><button class="delete-btn" onclick="deleteContainer(${container.ctid})">Delete</button></td>
+                    `;
                 }
                 
-                document.getElementById('totalApps').textContent = count;
+                document.getElementById('totalApps').textContent = runningCount;
+                
+                // Auto-refresh every 10 seconds
+                setTimeout(loadContainers, 10000);
             } catch (error) {
                 console.error('Error loading containers:', error);
+                setTimeout(loadContainers, 10000);
             }
         }
 

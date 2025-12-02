@@ -140,6 +140,18 @@ FRAMEWORKS = {
                     systemctl enable nginx''',
         'run_cmd': 'systemctl start nginx && systemctl status nginx',
         'entry_file': 'index.html'
+    },
+    'jenkins': {
+        'name': 'Jenkins CI/CD',
+        'port': 8080,
+        'test_repo': 'https://github.com/mouones/test',
+        'install': '''apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jre-headless wget git curl && 
+                     wget -q -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key && 
+                     echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list && 
+                     apt-get update && apt-get install -y jenkins''',
+        'setup': 'systemctl enable jenkins && systemctl start jenkins && sleep 10',
+        'run_cmd': 'systemctl start jenkins && systemctl status jenkins',
+        'entry_file': 'jenkins'
     }
 }
 
@@ -342,9 +354,37 @@ WantedBy=multi-user.target
 
 @app.route('/list', methods=['GET'])
 def list_containers():
-    """List all containers with details"""
-    output, _ = run_cmd("pct list")
-    return jsonify({'containers': output})
+    """List all containers with details including status and IPs"""
+    containers = []
+    output, _ = run_cmd("pct list | awk 'NR>1{print $1}'")
+    
+    if output:
+        for ctid in output.split('\n'):
+            if ctid and ctid.isdigit():
+                # Get container details
+                status_output, _ = run_cmd(f"pct status {ctid}")
+                config_output, _ = run_cmd(f"pct config {ctid}")
+                
+                # Parse hostname
+                hostname = "unknown"
+                ip = "unknown"
+                for line in config_output.split('\n'):
+                    if line.startswith('hostname:'):
+                        hostname = line.split(':', 1)[1].strip()
+                    elif 'ip=' in line:
+                        try:
+                            ip = line.split('ip=')[1].split('/')[0].split(',')[0]
+                        except:
+                            pass
+                
+                containers.append({
+                    'ctid': int(ctid),
+                    'hostname': hostname,
+                    'status': status_output.replace('status: ', ''),
+                    'ip': ip
+                })
+    
+    return jsonify({'containers': containers})
 
 @app.route('/delete/<int:ctid>', methods=['DELETE'])
 def delete_container(ctid):
