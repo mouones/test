@@ -250,7 +250,7 @@
 <body>
     <div class="container">
         <h1>🚀 Proxmox PaaS Platform</h1>
-        <p class="subtitle">Deploy applications with 10+ frameworks in seconds</p>
+        <p class="subtitle">Deploy applications with proven frameworks in seconds</p>
 
         <div class="stats">
             <div class="stat-card">
@@ -258,7 +258,7 @@
                 <div class="stat-label">Running Apps</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="totalFrameworks">10</div>
+                <div class="stat-number" id="totalFrameworks">3</div>
                 <div class="stat-label">Frameworks</div>
             </div>
             <div class="stat-card">
@@ -346,15 +346,11 @@
         const FRAMEWORK_ICONS = {
             'python-flask': '🐍',
             'python-django': '🎸',
-            'python-fastapi': '⚡',
-            'nodejs-express': '📗',
-            'nodejs-nextjs': '▲',
-            'php-laravel': '🔴',
-            'go-gin': '🐹',
-            'rust-actix': '🦀',
-            'ruby-rails': '💎',
-            'static-nginx': '🌐'
+            'php-laravel': '🔴'
         };
+        
+        // Only include working frameworks
+        const ALLOWED_FRAMEWORKS = ['python-flask', 'python-django', 'php-laravel'];
 
         // Load frameworks
         async function loadFrameworks() {
@@ -367,6 +363,9 @@
                 grid.innerHTML = '';
                 
                 for (const [key, fw] of Object.entries(frameworks)) {
+                    // Only show allowed frameworks
+                    if (!ALLOWED_FRAMEWORKS.includes(key)) continue;
+                    
                     const card = document.createElement('div');
                     card.className = 'framework-card' + (key === selectedFramework ? ' selected' : '');
                     card.dataset.framework = key;
@@ -441,6 +440,7 @@
                         IP Address: ${data.ip}<br>
                         Framework: ${data.framework_name}<br>
                         Access URL: <a href="${data.url}" target="_blank">${data.url}</a><br>
+                        <strong>GitHub Repository:</strong> <a href="https://github.com/mouones/test" target="_blank">github.com/mouones/test</a><br>
                         SSH Command: <code>${data.ssh}</code><br>
                         Password: <code>${data.password}</code>
                     `;

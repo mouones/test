@@ -270,7 +270,7 @@ def deploy():
         # Create container
         create_cmd = f"""pct create {ctid} {TEMPLATE} \
             --hostname {app_name} \
-            --memory 2048 \
+            --memory 5120 \
             --cores 2 \
             --net0 name=eth0,bridge=vmbr0,ip={ip}/{NETMASK},gw={GATEWAY} \
             --password {PASSWORD} \
@@ -527,7 +527,7 @@ def deploy_container_internal(data):
         # Create container
         create_cmd = f"""pct create {ctid} {TEMPLATE} \
             --hostname {app_name} \
-            --memory 2048 \
+            --memory 5120 \
             --cores 2 \
             --net0 name=eth0,bridge=vmbr0,ip={ip}/{NETMASK},gw={GATEWAY} \
             --password {PASSWORD} \
